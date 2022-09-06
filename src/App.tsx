@@ -1,13 +1,13 @@
-import { useState } from 'react'
+import { Container } from '@mui/material';
 import SignUp from './pages/SignUp/SignUp';
 
 function App() {
 
   return (
-    <div>
+    <Container maxWidth="md">
       <SignUp />
-    </div>
-  )
+    </Container>
+  );
 }
 
-export default App
+export default App;
