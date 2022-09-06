@@ -108,7 +108,7 @@ describe('Sign up page', () => {
       await new Promise((resolve) => setTimeout(resolve, 500));
       expect(requestBody).toEqual({
         email: 'test@email.com',
-        name: 'username',
+        username: 'username',
         password: 'password'
       });
     });
