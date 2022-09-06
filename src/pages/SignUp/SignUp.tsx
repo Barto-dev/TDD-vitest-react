@@ -17,7 +17,7 @@ const SignUp = () => {
   const onSubmit = async (evt:  MouseEvent<HTMLButtonElement>) => {
     evt.preventDefault();
     const body = {
-      name,
+      username: name,
       email,
       password
     };
