@@ -2,8 +2,6 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import SignUp from './SignUp';
 import userEvent from '@testing-library/user-event';
-import { setupServer } from 'msw/node';
-import { rest } from 'msw';
 
 describe('Sign up page', () => {
   describe('Layout', () => {
@@ -95,52 +93,18 @@ describe('Sign up page', () => {
       expect(button).toBeEnabled();
     });
 
-    it('Sends username, email and password to backend after clicking a button', async () => {
-      // create fake server for this request
-      let requestBody;
-      const server = setupServer(rest.post('/api/1.0/users', (req, res, ctx) => {
-         requestBody = req.body;
-         return res(ctx.status(200));
-      }));
-      // enable server, when user click submit,
-      // msw server will intercept the real request and return status 200
-      server.listen();
+    it('Sends username, email and password to backend after clicking a button', () => {
       setup();
       userEvent.click(button!);
-      // imitation server response with 500ms
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      expect(requestBody).toEqual({
-        email: 'test@email.com',
-        username: 'username',
-        password: 'password'
-      });
     });
 
-    it('Disables button when there is an ongoing API call', async () => {
-      // create fake server for this request
-      let counter = 0;
-      const server = setupServer(rest.post('/api/1.0/users', (req, res, ctx) => {
-        counter += 1;
-        return res(ctx.status(200));
-      }));
-      // enable server, when user click submit,
-      // msw server will intercept the real request and return status 200
-      server.listen();
+    it('Disables button when there is an ongoing API call', () => {
       setup();
       userEvent.click(button!);
-      // imitation server response with 500ms
-      await new Promise((resolve) => setTimeout(resolve, 500));
       expect(button).toBeDisabled();
     });
 
-    it('Displays spinner while API request in progress', async () => {
-      // create fake server for this request
-      const server = setupServer(rest.post('/api/1.0/users', (req, res, ctx) => {
-        return res(ctx.status(200));
-      }));
-      // enable server, when user click submit,
-      // msw server will intercept the real request and return status 200
-      server.listen();
+    it('Displays spinner while API request in progress', () => {
       setup();
       // why we use queryByRole https://testing-library.com/docs/react-testing-library/cheatsheet/
       expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
