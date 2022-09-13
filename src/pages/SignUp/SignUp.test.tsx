@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
+import { render, screen, waitForElementToBeRemoved } from '@testing-library/react';
 import SignUp from './SignUp';
 import userEvent from '@testing-library/user-event';
 
@@ -70,7 +70,7 @@ describe('Sign up page', () => {
 
   describe('Interactions', () => {
     let button: HTMLButtonElement | null;
-    const setup = () => {
+    const fillOutSignUpForm = () => {
       render(<SignUp />);
       const usernameInput = screen.getByLabelText('Name') as HTMLInputElement;
       const emailInput = screen.getByLabelText('Email') as HTMLInputElement;
@@ -80,6 +80,19 @@ describe('Sign up page', () => {
       userEvent.type(emailInput, 'test@email.com');
       userEvent.type(passwordInput, 'password');
       userEvent.type(repeatPasswordInput, 'password');
+      button = screen.queryByRole('button', { name: 'Sign Up' });
+    }
+
+    const fillOutFormWithError = () => {
+      render(<SignUp />);
+      const usernameInput = screen.getByLabelText('Name') as HTMLInputElement;
+      const emailInput = screen.getByLabelText('Email') as HTMLInputElement;
+      const passwordInput = screen.getByPlaceholderText('Enter you password');
+      const repeatPasswordInput = screen.getByPlaceholderText('Repeat your password');
+      userEvent.type(usernameInput, '');
+      userEvent.type(emailInput, '');
+      userEvent.type(passwordInput, 'pass');
+      userEvent.type(repeatPasswordInput, 'pass');
       button = screen.queryByRole('button', { name: 'Sign Up' });
     }
 
@@ -94,22 +107,55 @@ describe('Sign up page', () => {
     });
 
     it('Sends username, email and password to backend after clicking a button', () => {
-      setup();
+      fillOutSignUpForm();
       userEvent.click(button!);
     });
 
     it('Disables button when there is an ongoing API call', () => {
-      setup();
+      fillOutSignUpForm();
       userEvent.click(button!);
       expect(button).toBeDisabled();
     });
 
     it('Displays spinner while API request in progress', () => {
-      setup();
+      fillOutSignUpForm();
       // why we use queryByRole https://testing-library.com/docs/react-testing-library/cheatsheet/
       expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
       userEvent.click(button!);
       expect(screen.getByRole('progressbar')).toBeInTheDocument();
     });
+
+    it('Displays account activation notification after successfully sign up request', async () => {
+      const message = 'Please check your e-mail to activate your account';
+      fillOutSignUpForm();
+      expect(screen.queryByText(message)).not.toBeInTheDocument();
+      userEvent.click(button!);
+      // because findBy, try to find async elements
+      const text = await screen.findByText(message);
+      expect(text).toBeInTheDocument();
+    });
+
+    it('Hides sign up form after successfully sign up request', async () => {
+      fillOutSignUpForm();
+      const form = screen.getByTestId('signup-form');
+      userEvent.click(button!);
+      await waitForElementToBeRemoved(form);
+    });
+
+    it('Displays validation message for username', async () => {
+       fillOutFormWithError();
+       userEvent.click(button!);
+       const validationError = await screen.findByText('Username cannot be null');
+       expect(validationError).toBeInTheDocument();
+    })
+
+    it('Hides spinner and enable submit button after error received', async () => {
+      fillOutFormWithError();
+      userEvent.click(button!);
+      // specially wait error, because test not pass if we don't wait
+      await screen.findByText('Username cannot be null');
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+      expect(button).toBeEnabled();
+    })
   });
 });
